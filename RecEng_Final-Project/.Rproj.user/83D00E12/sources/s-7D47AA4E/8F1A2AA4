@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1551706111746.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8F1A2AA4",
+    "lastKnownWriteTime" : 7954884641996231263,
+    "last_content_update" : 1551706111746,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "id" : "11de2f50d44c43a0880c3f3ab9268e81",
+        "name" : "Groceries",
+        "title" : "Groceries"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "object_explorer"
+}

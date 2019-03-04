@@ -30,9 +30,19 @@ library(shiny)
 
 ## 1.1 Project Aim & Model Results
 
-This markdown contains the development of two recommendation engines, where one provides recommendations for groceries based on past purchases and the other provides recommendations for movies, based on user ratings. Performance parameters for each model are as follows:
+This markdown contains the development of two recommendation engines, where one provides recommendations for groceries based on past transactions and the other provides recommendations for movies, based on user ratings. The final models were selected following the CRISP-DM framework for each business case: Business Understanding -> Data Understanding -> Data Preperation -> Modelling -> Model Evaluation, where special attention was given to the nature of each business problem for the model selection, prior to any performance evaluations. 
 
-### Model Results - Recommendation Engine For Groceries
+According to this approach, the following two models were selected, with their corresponding results:
+
+### Final Model - Recommendation Engine For Groceries
+
+To provide recommendations for groceries based on past transactions an association analysis was performed to identify rules that define whether the purchase of one or more groceries would increase the probability of a purchase of another grocery item. To see the methodology of how this model was selected, see Section 2.4, model selection. 
+
+Amongst the many rules discovered, BLANK distinct rules have been identified in terms of statistical validity and value for business. 
+
+Insights into purchasing patterns gained from these rules are intended to guide the business manager to increase grocery sales, by discovering item groups that customers tend to buy together.The analysis herein utilized sales information contained in the dataset “Groceries”. 
+By utilizing the associative metrics Lift, Confidence difference and Confidence ratio, the following set of BLANK rules was identified:
+
 
 ### Model Results - Recommendation Engine For Movies
 
@@ -67,8 +77,9 @@ plot(groceries_summary@lengths)
 itemFrequencyPlot(Groceries, topN = 20)
 
 ```
+## 2.3 Data Preperation
 
-## 2.3 Model Pre-Selection
+## 2.4 Model Selection
 
 The following output shows all the possible algorithms for a binaryRatingMatrix.
 
@@ -80,11 +91,6 @@ recommenderRegistry$get_entries(dataType = "binaryRatingMatrix")
 
 There are six possible recommendation algorithms for the groceries dataset, namely: Alternative Least Squares (ALS), Association Rules (AR), Item Based Collaborative Filtering (IBCF), Popular, Random and User Based Collaborative Filtering (UBCF).
 We are going to take a look at the AR, IBCF, UBCF and Popular algorithms, and we are going to use the Random algorithm as a baseline.
-
-## 2.4 Data Preperation
-
-## 2.5 Model Tuning
-
 
 ```{r Make the train and test set, and model}
 
@@ -121,6 +127,9 @@ resultsIBCF <- evaluate(esSplitGroc, models_to_evaluate, type = "topNList", n=c(
 plot(resultsIBCF, annotate=c(1,2))
 
 ```
+
+
+## 2.5 Model Tuning
 
 This is just some code to test and see the AR rules
 
@@ -168,7 +177,7 @@ inspect(head(sort(arGroceriesModel, by="support", decreasing=TRUE), 35))
 
 
 ```{r}
-
+df<-Groceries@data
 ```
 
 
