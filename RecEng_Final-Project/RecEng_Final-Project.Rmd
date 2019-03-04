@@ -137,8 +137,6 @@ This is just some code to test and see the AR rules
 
 groceriesRecAr <- Recommender(getData(esSplitGroc,"train"), method = "AR", parameter = list(support = 0.001, conf = 0.2, maxlen = 5))
 
-
-
 arGroceriesModel <- getModel(groceriesRecAr)$rule_base
 summary(arGroceriesModel)
 rulesDF <- as(arGroceriesModel, "data.frame")
@@ -146,11 +144,11 @@ rulesDF$prior_conf <- rulesDF$confidence / rulesDF$lift
 rulesDF$confidence_diff <- abs(rulesDF$confidence - rulesDF$prior_conf)
 rulesDF$confidence_ratio <- 1- (apply(rulesDF[,c(3,7)], 1, min) / apply(rulesDF[,c(3,7)], 1, max) )
 
-rulesDF[order(rulesDF$lift, decreasing = T),]
-rulesDF[order(rulesDF$confidence_ratio, decreasing = T),]
-rulesDF[order(rulesDF$confidence_diff, decreasing = T),]
-rulesDF[order(rulesDF$confidence, decreasing = T),]
-rulesDF$
+# Top 20 according to each AR metric
+head(rulesDF[order(rulesDF$lift, decreasing = T),],20)
+head(rulesDF[order(rulesDF$confidence_ratio, decreasing = T),],20)
+head(rulesDF[order(rulesDF$confidence_diff, decreasing = T),],20)
+head(rulesDF[order(rulesDF$confidence, decreasing = T),],20)
 
 inspect(head(sort(arGroceriesModel, by="lift", decreasing=TRUE), 20))
 inspect(head(sort(arGroceriesModel, by="confidence", decreasing=TRUE), 20))
