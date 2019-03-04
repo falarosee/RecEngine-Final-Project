@@ -133,29 +133,28 @@ plot(resultsIBCF, annotate=c(1,2))
 
 This is just some code to test and see the AR rules
 
-```{r TEST: check AR rules}
+```{r check AR rules}
 
-recAr <- Recommender(getData(esSplitGroc,"train"), method = "AR", parameter = list(support = 0.001, conf = 0.3, maxlen = 5))
-recIBCFJaccard <- Recommender(getData(esSplitGroc,"train"), method = "IBCF", parameter = list(method = "Jaccard", k = 300))
-recUBCF <- Recommender(getData(esSplitGroc, "train"), method = "UBCF", parameter = list(method="cosine",nn=50))
-recPopular <- Recommender(getData(esSplitGroc, "train"), method = "POPULAR")
-
-pAR <- predict(recAr, getData(esSplitGroc, "known"))
-pIBCFJaccard <- predict(recIBCFJaccard, getData(esSplitGroc, "known"))
-pUBCF <- predict(recUBCF, getData(esSplitGroc, "known"))
-pPopular <- predict(recPopular, getData(esSplitGroc, "known"))
-
-calcPredictionAccuracy(pAR, getData(esSplitGroc, "unknown"), given = -1)
-calcPredictionAccuracy(pIBCFJaccard, getData(esSplitGroc, "unknown"), given = -1)
-calcPredictionAccuracy(pUBCF, getData(esSplitGroc, "unknown"), given=-1)
-calcPredictionAccuracy(pPopular, getData(esSplitGroc, "unknown"), given = -1)
+groceriesRecAr <- Recommender(getData(esSplitGroc,"train"), method = "AR", parameter = list(support = 0.001, conf = 0.2, maxlen = 5))
 
 
-arGroceriesModel <- getModel(recAr)$rule_base
+
+arGroceriesModel <- getModel(groceriesRecAr)$rule_base
 summary(arGroceriesModel)
-inspect(head(sort(arGroceriesModel, by="lift", decreasing=TRUE), 35))
-inspect(head(sort(arGroceriesModel, by="confidence", decreasing=TRUE), 35))
-inspect(head(sort(arGroceriesModel, by="support", decreasing=TRUE), 35))
+rulesDF <- as(arGroceriesModel, "data.frame")
+rulesDF$prior_conf <- rulesDF$confidence / rulesDF$lift
+rulesDF$confidence_diff <- abs(rulesDF$confidence - rulesDF$prior_conf)
+rulesDF$confidence_ratio <- 1- (apply(rulesDF[,c(3,7)], 1, min) / apply(rulesDF[,c(3,7)], 1, max) )
+
+rulesDF[order(rulesDF$lift, decreasing = T),]
+rulesDF[order(rulesDF$confidence_ratio, decreasing = T),]
+rulesDF[order(rulesDF$confidence_diff, decreasing = T),]
+rulesDF[order(rulesDF$confidence, decreasing = T),]
+rulesDF$
+
+inspect(head(sort(arGroceriesModel, by="lift", decreasing=TRUE), 20))
+inspect(head(sort(arGroceriesModel, by="confidence", decreasing=TRUE), 20))
+inspect(head(sort(arGroceriesModel, by="support", decreasing=TRUE), 20))
 
 
 ```
