@@ -147,13 +147,9 @@ rulesDF$confidence_ratio <- 1- (apply(rulesDF[,c(3,7)], 1, min) / apply(rulesDF[
 # Top 20 according to each AR metric
 head(rulesDF[order(rulesDF$lift, decreasing = T),],20)
 head(rulesDF[order(rulesDF$confidence_ratio, decreasing = T),],20)
-head(rulesDF[order(rulesDF$confidence_diff, decreasing = T),],20)
-head(rulesDF[order(rulesDF$confidence, decreasing = T),],20)
-
-inspect(head(sort(arGroceriesModel, by="lift", decreasing=TRUE), 20))
-inspect(head(sort(arGroceriesModel, by="confidence", decreasing=TRUE), 20))
-inspect(head(sort(arGroceriesModel, by="support", decreasing=TRUE), 20))
-
+head(rulesDF[order(rulesDF$confidence_diff, decreasing = T),],20) # Rules with longer LHS usually have higher confidence_difference
+head(rulesDF[order(rulesDF$confidence, decreasing = T),],20) 
+head(rulesDF[order(rulesDF$support, decreasing = T),],20) 
 
 ```
 
