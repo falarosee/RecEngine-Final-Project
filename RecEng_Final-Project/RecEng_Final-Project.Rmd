@@ -27,11 +27,114 @@ Given the seperate nature, aim and construction of each recommendation engine, t
 
 ## 2.2 Data Exploration
 
+Load the groceries dataset, and transform it to a binaryRatingMatrix, from the recommenderlab package.
+
+```{r load data}
+data("Groceries")
+groceriesDataset <- as(Groceries, "binaryRatingMatrix")
+
+#str(groceriesDataset)
+
+```
+
+The Groceries dataset consists of 169 columns and 9835 rows, that respectively represent the different items and the different transactions for each customer.
+The dataset represents different transactions (baskets), so the recommendation algorithm that comes to mind here is Association Rules.
+
+With the help of some plots, we explore the groceries dataset.
+First of all, we plot the distribution of the amount of items in every transaction. As we can see on the plot, most of the transactions contain exactly 1 item (2159 transactions). The number of transactions with x items decreases as x increases. On average, every transaction contains 4.409 unique items.
+
+```{r exploratory}
+groceries_summary <- summary(Groceries)
+groceries_summary
+plot(groceries_summary@lengths)
+itemFrequencyPlot(Groceries, topN = 20)
+
+```
+
 ## 2.3 Model Pre-Selection
+
+The following output shows all the possible algorithms for a binaryRatingMatrix.
+
+```{r Show all the possible algorithms for a binaryRatingMatrix}
+
+recommenderRegistry$get_entries(dataType = "binaryRatingMatrix")
+
+```
+
+There are six possible recommendation algorithms for the groceries dataset, namely: Alternative Least Squares (ALS), Association Rules (AR), Item Based Collaborative Filtering (IBCF), Popular, Random and User Based Collaborative Filtering (UBCF).
+We are going to take a look at the AR, IBCF, UBCF and Popular algorithms, and we are going to use the Random algorithm as a baseline.
 
 ## 2.4 Data Preperation
 
 ## 2.5 Model Tuning
+
+```{r Get best parameter}
+
+vector_k <- c(100,150,169,300,350,400)
+models_to_evaluate <- lapply(vector_k, function(k){
+  list(name = "IBCF",
+       param = list(method = "Jaccard", k = k))
+})
+names(models_to_evaluate) <- paste0("IBCF_k_", vector_k)
+
+resultsIBCF <- evaluate(esSplitGroc, models_to_evaluate, type = "topNList", n=c(1, 5, 10, 15, 50, 100))
+
+
+plot(resultsIBCF, annotate=c(1,2))
+
+
+```
+
+```{r Make the train and test set, and model}
+
+# 80-20 for train and test set
+esSplitGroc <- evaluationScheme(groceriesDataset, method="split", train=0.80, given = -1)
+
+algorithms <- list(
+  "random" = list(name="RANDOM", param=NULL),
+  "popular" = list(name="POPULAR", param=NULL),
+  "UBCF" = list(name="UBCF", param=list(nn=500)),
+  "IBCFJac" = list(name="IBCF", param=list(method = "Jaccard",
+                                           k=500)),
+  "AR" = list(name="AR", param = list(support = 0.001, conf = 0.3, maxlen=5))
+)
+
+resultsGroc <- evaluate(esSplitGroc, algorithms, type = "topNList", n=c(1, 5, 10, 15, 50, 100))
+
+plot(resultsGroc, annotate=c(1,2))
+
+```
+
+
+This is just some code to test and see the AR rules
+
+```{r TEST: check AR rules}
+
+recAr <- Recommender(getData(esSplitGroc,"train"), method = "AR", parameter = list(support = 0.001, conf = 0.3, maxlen = 5))
+recIBCFJaccard <- Recommender(getData(esSplitGroc,"train"), method = "IBCF", parameter = list(method = "Jaccard", k = 300))
+recUBCF <- Recommender(getData(esSplitGroc, "train"), method = "UBCF", parameter = list(method="cosine",nn=50))
+recPopular <- Recommender(getData(esSplitGroc, "train"), method = "POPULAR")
+
+pAR <- predict(recAr, getData(esSplitGroc, "known"))
+pIBCFJaccard <- predict(recIBCFJaccard, getData(esSplitGroc, "known"))
+pUBCF <- predict(recUBCF, getData(esSplitGroc, "known"))
+pPopular <- predict(recPopular, getData(esSplitGroc, "known"))
+
+calcPredictionAccuracy(pAR, getData(esSplitGroc, "unknown"), given = -1)
+calcPredictionAccuracy(pIBCFJaccard, getData(esSplitGroc, "unknown"), given = -1)
+calcPredictionAccuracy(pUBCF, getData(esSplitGroc, "unknown"), given=-1)
+calcPredictionAccuracy(pPopular, getData(esSplitGroc, "unknown"), given = -1)
+
+
+arGroceriesModel <- getModel(recAr)$rule_base
+summary(arGroceriesModel)
+inspect(head(sort(arGroceriesModel, by="lift", decreasing=TRUE), 35))
+inspect(head(sort(arGroceriesModel, by="confidence", decreasing=TRUE), 35))
+inspect(head(sort(arGroceriesModel, by="support", decreasing=TRUE), 35))
+
+
+```
+
 
 # 3. Model Development: Recommendation Engine For Movies
 
