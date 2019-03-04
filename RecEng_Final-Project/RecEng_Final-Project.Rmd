@@ -163,17 +163,113 @@ inspect(head(sort(arGroceriesModel, by="support", decreasing=TRUE), 35))
 
 # 3. Model Development: Recommendation Engine For Movies
 
-## 3.1 Business Case
+```{r}
+load("bigMovieLense.RData")
+```
 
-## 3.2 Data Exploration
+The following document shows the analysis of different recommendation algorithms applied to the _Big Movie Lense dataset_. The main objective is to apply variations of recommendation algorithms to understand which performs better and why.
 
-## 3.3 Model Pre-Selection
+As we can see, the dataset is a rating matrix with 999,714 ratings from 6,040 users to 3,449 movies. The ratings span is from 1 to 5.
 
-## 3.4 Data Preperation
+```{r}
+str(bigMovieLense)
+```
 
-## 3.5 Model Tuning
+# Descriptive analysis
 
-# 4. Conclusion and Recommendations for Next Steps
+As an initial step, we will analyze the distribution of Ratings.
+We can see that on average one user has evaluated 166 movies.
+The user that has the minimum number of evaluations has only 18, while the user with the maximum number has 2,283.
+
+Considering that some users tend to give low or high ratings to all of their movies, the results may be biased. To remove this effect, the data must be normalized in such a way that the average rating of each user is 0. 
+
+The following histograms show the distribution of ratings from users. We can see that the ratings are slightly skewed to the left, indicating that most of the movies are rated with 4/5.
+
+
+```{r}
+
+# On average wow many evaluations per user we have?
+mean(rowCounts(bigMovieLense))
+min(rowCounts(bigMovieLense))
+max(rowCounts(bigMovieLense))
+
+# Which are the evaluations from the first user?
+#as(bigMovieLense[1,], "list")
+
+# On average, how much the first user rates?
+rowMeans(bigMovieLense[1,])
+
+# Distribution of the ratings
+hist(getRatings(bigMovieLense), col = "darkred")
+hist(getRatings(normalize(bigMovieLense, method = "Z-score")), main="Z-score Ratings Distribution", col = "DarkRed")
+
+#distribution of how many movies each user has rated
+hist(rowCounts(bigMovieLense), breaks = 50, main = "Histogram Rated movies by user", col = "DarkBlue")
+
+# Distribution of the average ratings per movie
+hist(colMeans(bigMovieLense), main = "Histogram Average Rating per Movie", col = "DarkGreen")
+
+```
+
+# Comparing Recommendation Algorithms
+
+We will test recommendation systems with the following algoriths:
+
+* *Random* --> Produce random recommendations. This algorithm serves as a benchmark to confirm that the algorithms give a better prediction than a random recommender.
+* *Popularity* --> Recomendation based in items popularity.
+
+* *UBCF* --> The user-based CF assumes that similar users tend to give similar rates. There are different similarity measures between users. For this exercise we will test the Nearest Neighbors (nn=50) and the Cosine similarity measure.
+
+** User Based Collaborative Filtering (UBCF) NN = 50 --> The recommendations are given based in the 50 nearest neighbors.
+** User Based Collaborative Filtering (UBCF) Cosine --> The recommendations are given based in the cosine similarity measure.
+
+* *IBCF Pearson* --> The item-based CF recommends items based on their similarity with the items that the target user rated. The advantage of this algorithm family is that it tackles the issue that users' prefrences may change over time. For this exercise we test the Pearson similarity measure. We can also use the Cosine or Jaccard similarity measures. However, the Pearson correlation is invariant to adding a constant to all elements.
+
+* *Alternating Least Squares Matrix Factorization (ALS)* --> In collaborative filtering, the scalability issue is common with large datasets. If we add more users and movies, the matrix grows exponentially, and the majority of movies receive few or even no ratings ending with a really sparse matrix. The ALS algorithm is a matrix factorization solution for collaborative filtering, when we need to scale the recommendation system. We will test the ALS algorithms assuming that we would require scalability in the future.
+
+```{r}
+
+# Get the different Algorithms that we may apply to our Recommendation Engine
+recommenderRegistry$get_entries(dataType = "realRatingMatrix")
+
+MoviesSubset <- bigMovieLense[1:(nrow(bigMovieLense)*0.50),]
+
+set.seed(123)
+Multi_evaluate <- evaluationScheme(MoviesSubset, method = "split", train=0.8, given = 5, goodRating = 4)
+
+algorithms <- list(
+  "random" = list(name="RANDOM", param=NULL),
+  "popular" = list(name="POPULAR", param=NULL),
+  "User Based CFnn50" = list(name="UBCF", param=list(nn=50)),
+  "User Based CFCos" = list(name="UBCF", param=list(method = "Cosine")),  
+  "Item Based CFPea" = list(name="IBCF", param=list(method = "Pearson")),
+  "ALS" = list(name="ALS", param=list())
+)
+
+Multi_results <- evaluate(Multi_evaluate, 
+                          method = algorithms, 
+                          type = "topNList", 
+                          parameter = list(normalize = "Z-Score"),
+                          n=c(1, 5, seq(10,100,10)))
+
+plot(Multi_results, annotate=c(1,2), legend = "topleft")
+
+ratings_results <- evaluate(Multi_evaluate, algorithms, type = "ratings")
+
+plot(ratings_results)
+
+```
+
+In the previous plots we can see the best results come from the POPULARITY algorithm.
+
+In the ROC curve, we find a steep increase in True Positive Rates until the tenth recommendation. We would not recommend more than 10 movies considering a possible bigger marginal increment in False Positive Rates.
+
+It is important to consider that the POPULARITY algorithm is based in the most popular items. From a business perspective, this may affect negatively the recommendations incurring in the banana problem (Only recommends top rating items). Considering this, we would create a Hybrid Recommendation Engine that includes Popularity and User Based Recommendations with a small number of nearest neighbors.
+
+# Creating a Recomendation Engine
+
+
+
 
 
 ```{r}
