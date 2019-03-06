@@ -77,6 +77,8 @@ plot(groceries_summary@lengths)
 itemFrequencyPlot(Groceries, topN = 20)
 
 ```
+
+
 ## 2.3 Data Preperation
 
 ## 2.4 Model Selection
@@ -92,46 +94,89 @@ recommenderRegistry$get_entries(dataType = "binaryRatingMatrix")
 There are six possible recommendation algorithms for the groceries dataset, namely: Alternative Least Squares (ALS), Association Rules (AR), Item Based Collaborative Filtering (IBCF), Popular, Random and User Based Collaborative Filtering (UBCF).
 We are going to take a look at the AR, IBCF, UBCF and Popular algorithms, and we are going to use the Random algorithm as a baseline.
 
-```{r Make the train and test set, and model}
+First we are going to compare these algorithms according to their ROC curve. We split the data in train and test data. Then we evaluate their performance with a model that was trained on the train set (one model for every algorithm). The model then returns a list with N recommendations for every transaction in the test set. For N, we choose the values 1, 5, 10, 15 and 20 because ultimately it doesn't make sense to recommend more than 20 items.
+
+```{r Split the data}
 
 # 80-20 for train and test set
 esSplitGroc <- evaluationScheme(groceriesDataset, method="split", train=0.80, given = -1)
 
-algorithms <- list(
-  "random" = list(name="RANDOM", param=NULL),
-  "popular" = list(name="POPULAR", param=NULL),
-  "UBCF" = list(name="UBCF", param=list(nn=500)),
-  "IBCFJac" = list(name="IBCF", param=list(method = "Jaccard",
-                                           k=500)),
-  "AR" = list(name="AR", param = list(support = 0.001, conf = 0.3, maxlen=5))
-)
-
-resultsGroc <- evaluate(esSplitGroc, algorithms, type = "topNList", n=c(1, 5, 10, 15, 50, 100))
-
-plot(resultsGroc, annotate=c(1,2))
-
 ```
 
-```{r Get best parameter}
+For the parameter tuning of the different algorithms, we only need to look the UBCF, IBCF and the AR algorithms because the popular and random ones don't need any parameters.
+The UBCF algorithm needs an 'nn' parameter, which specifies the number of nearest neighbours that the algorithm should look at. We will make several UBCF algorithms with the parameter ranging from 100 to 1000, with a step of 100 to see which parameter value yields the best results. 
+In this case, for groceries, there are no actual users, because the rows in the groceries matrix represent transactions and not users. So User Based CF is actually Transaction Based CF in this case. It looks for similar transactions and then recommends items that were present in these similar transactions.
 
-vector_k <- c(100,150,169,300,350,400)
-models_to_evaluate <- lapply(vector_k, function(k){
+```{r Parameter tuning UBCF}
+
+vector_nn <- seq(100,1000,100)
+models_to_evaluate <- lapply(vector_nn, function(k){
+  list(name = "UBCF",
+       param = list(nn = k))
+})
+names(models_to_evaluate) <- paste0("UBCF_nn", vector_nn)
+
+resultsIBCF <- evaluate(esSplitGroc, models_to_evaluate, type = "topNList", n=c(1, 5, 10, 15, 20))
+
+plot(resultsIBCF, annotate=c(1,2))
+
+```
+As we can see on the graph, the algorithm with nn = 400 performs the best, although there is not much difference between the algorithms. 
+
+For IBCF, we can specify two parameters: the distance method to use and the parameter k, which is comparable to the parameter nn of UBCF and also specifies the neighbourhood of comparison. 
+The parameter k will vary between 100 and 250, with steps of 50, and we will compare the method 'Jaccard' and 'Cosine'.
+
+```{r Parameter tuning IBCF}
+
+vector_k <- c(100,150,200,250)
+models_to_evaluateJac <- lapply(vector_k, function(k){
   list(name = "IBCF",
        param = list(method = "Jaccard", k = k))
 })
-names(models_to_evaluate) <- paste0("IBCF_k_", vector_k)
+names(models_to_evaluateJac) <- paste0("IBCF_k_Jac", vector_k)
 
-resultsIBCF <- evaluate(esSplitGroc, models_to_evaluate, type = "topNList", n=c(1, 5, 10, 15, 50, 100))
+models_to_evaluateCos <- lapply(vector_k, function(k){
+  list(name = "IBCF",
+       param = list(method = "cosine", k = k))
+})
+names(models_to_evaluateCos) <- paste0("IBCF_k_Cos", vector_k)
+
+models_to_evaluate <- append(models_to_evaluateJac, models_to_evaluateCos)
+
+resultsIBCF <- evaluate(esSplitGroc, models_to_evaluate, type = "topNList", n=c(1, 5, 10, 15, 20))
 
 
 plot(resultsIBCF, annotate=c(1,2))
 
 ```
+For IBCF, we see that the Jaccard method works best, especially when less recommendations are made. The best parameter for k seems to be 150 in this case, although, again, the performance of the algorithms are very close for the different parameters.
 
+Now we compare all these algorithms, with their optimal parameters, with each other. For AR choose our parameters in such a way that enough rules are generated to make enough recommendations so we can evaluate AR with the other algorithms.
+
+```{r Make the train and test set, and model}
+
+algorithms <- list(
+  "random" = list(name="RANDOM", param=NULL),
+  "popular" = list(name="POPULAR", param=NULL),
+  "UBCF" = list(name="UBCF", param=list(nn=400)),
+  "IBCFJac" = list(name="IBCF", param=list(method = "Jaccard",
+                                           k=150)),
+  "AR" = list(name="AR", param = list(support = 0.001, conf = 0.01, maxlen=20))
+)
+
+resultsGroc <- evaluate(esSplitGroc, algorithms, type = "topNList", n=c(1, 5, 10, 15, 20))
+
+plot(resultsGroc, annotate=c(1), legend = "topright")
+
+```
+
+This plot shows that the UBCF algorithm gives the best results. The rest of the algorithms actually yield similar results. For UBCF and IBCF, it is the case that for a growing parameter nn and k respectively the algorithms get similar to the 'popular' algorithm because it takes more neighbours into account and ultimately it will take every User/Item into account, just like the 'popular' algorithm does.
+The UBCF algorithm yields the best results, however from a business persepctive it is not the most interesting algorithm. Mainly because this algorithm predicts recommended items for a CURRENT transaction, while it is of more use to us to know the items that get frequently bought together and have some kind of rules that explain these relationships between items.
+Because the difference between the algorithms isn't that big, we choose to advance with the AR algorithm because it makes the most sense in this business case.
 
 ## 2.5 Model Tuning
 
-This is just some code to test and see the AR rules
+In this section, we are going to tune the parameter for our AR algorithm.
 
 ```{r check AR rules}
 
