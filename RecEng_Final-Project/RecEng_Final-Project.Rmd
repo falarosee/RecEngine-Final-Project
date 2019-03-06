@@ -69,11 +69,11 @@ itemFrequencyPlot(Groceries, topN = 20)
 
 ```
 
-The Groceries dataset consists of 169 columns and 9835 rows, that respectively represent the different items and the different transactions for each customer.
+The Groceries dataset consists of 169 columns and 9835 rows, that respectively represent the different items and the different transactions.
 The dataset represents different transactions (baskets), so the recommendation algorithm that comes to mind here is Association Rules.
 
 With the help of some plots, we explore the groceries dataset.
-First of all, we plot the distribution of the amount of items in every transaction. As we can see on the plot, most of the transactions contain exactly 1 item (2159 transactions). The number of transactions with x items decreases as x increases. On average, every transaction contains 4.409 unique items.
+First of all, we plot the distribution of the amount of items in every transaction. As we can see on the plot, a lot of the transactions contain exactly 1 item (2159 transactions). The number of transactions with x items decreases as x increases. On average, every transaction contains 4.409 unique items.
 
 A random sample of 100 transactions for the groceries dataset confirms the sparsity of the dataset: only a few items are bought in every transaction and every item only occurs in a few transactions.
 
@@ -85,7 +85,7 @@ image(sample(Groceries, 100))
 
 ## 2.3 Data Preperation
 
-Because the groceries dataset is actually a binary matrix. The matrix doesn't contain any real ratings, so normailzation is not possible in this case. We just convert the transactions 'Groceries' to a binaryRatingMatrix 'groceriesDataset'. With this binaryRatingMatrix we can build our recommenders.
+The groceries dataset is actually a binary matrix. This matrix doesn't contain any real ratings, so normalization is not possible in this case. We just convert the transactions 'Groceries' to a binaryRatingMatrix 'groceriesDataset'. With this binaryRatingMatrix we can build our recommenders.
 
 ```{r Convert ot Binary matrix}
 
@@ -106,7 +106,7 @@ recommenderRegistry$get_entries(dataType = "binaryRatingMatrix")
 There are six possible recommendation algorithms for the groceries dataset, namely: Alternative Least Squares (ALS), Association Rules (AR), Item Based Collaborative Filtering (IBCF), Popular, Random and User Based Collaborative Filtering (UBCF).
 We are going to take a look at the AR, IBCF, UBCF and Popular algorithms, and we are going to use the Random algorithm as a baseline.
 
-First we are going to compare these algorithms according to their ROC curve. We split the data in train and test data. Then we evaluate their performance with a model that was trained on the train set (one model for every algorithm). The model then returns a list with N recommendations for every transaction in the test set. For N, we choose the values 1, 5, 10, 15 and 20 because ultimately it doesn't make sense to recommend more than 20 items.
+First we are going to compare these algorithms according to their ROC curve. We split the data in train and test data. Then we evaluate their performance with a model that was trained on the train set (one model for every algorithm). The model then returns a list with N recommendations for every transaction in the test set. For N, we choose the values 1, 5, 10, 15 and 20 because ultimately it doesn't make sense to recommend more than 20 grocery store items. For the 'given' parameter in the evaluationScheme function we chose -1, that way the algorithms get all but one items from a transaction and they try to predict the one extra item in that transaction. This makes sense because there are not that many items in each transaction, so it's easier to make a prediction for one item, on the basis of the rest of the transaction. From a business perspective this also makes sense because it is usually the case that a recommendation is done, according to the items that are already in your basket (in online shopping). 
 
 ```{r Split the data}
 
@@ -115,7 +115,7 @@ esSplitGroc <- evaluationScheme(groceriesDataset, method="split", train=0.80, gi
 
 ```
 
-For the parameter tuning of the different algorithms, we only need to look the UBCF, IBCF and the AR algorithms because the popular and random ones don't need any parameters.
+For the parameter tuning of the different algorithms, we only need to look at the UBCF, IBCF and the AR algorithms because the popular and random ones don't need any parameters.
 The UBCF algorithm needs an 'nn' parameter, which specifies the number of nearest neighbours that the algorithm should look at. We will make several UBCF algorithms with the parameter ranging from 100 to 1000, with a step of 100 to see which parameter value yields the best results. 
 In this case, for groceries, there are no actual users, because the rows in the groceries matrix represent transactions and not users. So User Based CF is actually Transaction Based CF in this case. It looks for similar transactions and then recommends items that were present in these similar transactions.
 
@@ -133,10 +133,11 @@ resultsIBCF <- evaluate(esSplitGroc, models_to_evaluate, type = "topNList", n=c(
 plot(resultsIBCF, annotate=c(1,2))
 
 ```
+
 As we can see on the graph, the algorithm with nn = 400 performs the best, although there is not much difference between the algorithms. 
 
-For IBCF, we can specify two parameters: the distance method to use and the parameter k, which is comparable to the parameter nn of UBCF and also specifies the neighbourhood of comparison. 
-The parameter k will vary between 100 and 250, with steps of 50, and we will compare the method 'Jaccard' and 'Cosine'.
+For IBCF, we can specify two parameters: the distance method to use and the parameter k, which is comparable to the parameter nn of UBCF and also specifies the neighbourhood for comparison. 
+The parameter k will vary between 100 and 250 in this case, with steps of 50, and we will compare the method 'Jaccard' and 'Cosine'.
 
 ```{r Parameter tuning IBCF}
 
@@ -162,11 +163,11 @@ plot(resultsIBCF, annotate=c(1,2))
 
 ```
 
-For IBCF, we see that the Jaccard method works best, especially when less recommendations are made. The best parameter for k seems to be 150 in this case, although, again, the performance of the algorithms are very close for the different parameters.
+For IBCF, we see that the Jaccard method works best, especially when less recommendations are made. In this case, it is much harder to detect the beter parameter because they are all really comparabl. We will choose 150 as the best parameter, although, again, the performance of the algorithms are very close for the different parameters.
 
-Now we compare all these algorithms, with their optimal parameters, with each other. For AR choose our parameters in such a way that enough rules are generated to make enough recommendations so we can evaluate AR with the other algorithms.
+Now we compare all these algorithms, with their optimal parameters, with each other. For AR we choose our parameters in such a way that enough rules are generated to make enough recommendations so we can evaluate it easily with the other algorithms.
 
-```{r Make the train and test set, and model}
+```{r Make the models}
 
 algorithms <- list(
   "random" = list(name="RANDOM", param=NULL),
@@ -184,8 +185,8 @@ plot(resultsGroc, annotate=c(1), legend = "topright")
 ```
 
 This plot shows that the UBCF algorithm gives the best results. The rest of the algorithms actually yield similar results. For UBCF and IBCF, it is the case that for a growing parameter nn and k respectively the algorithms get similar to the 'popular' algorithm because it takes more neighbours into account and ultimately it will take every User/Item into account, just like the 'popular' algorithm does.
-The UBCF algorithm yields the best results, however from a business persepctive it is not the most interesting algorithm. Mainly because this algorithm predicts recommended items for a CURRENT transaction, while it is of more use to us to know the items that get frequently bought together and have some kind of rules that explain these relationships between items.
-Because the difference between the algorithms isn't that big, we choose to advance with the AR algorithm because it makes the most sense in this business case.
+The UBCF algorithm yields the best results, however from a business perspective it is not the most interesting algorithm. Mainly because it doesn't really give an insight in how several items are related, it just makes recommendations based on items that are similar. It is of more use to us to know the items that get frequently bought together and have some kind of rules that explain these relationships between items.
+Because the difference between the algorithms isn't that big, we choose to advance with the AR algorithm because it makes the most sense in this business case and it is easier to draw conclusions from these rules.
 
 ## 2.5 Model Tuning
 
