@@ -58,17 +58,8 @@ Load the groceries dataset, and transform it to a binaryRatingMatrix, from the r
 
 ```{r load data}
 data("Groceries")
-groceriesDataset <- as(Groceries, "binaryRatingMatrix")
-
-#str(groceriesDataset)
 
 ```
-
-The Groceries dataset consists of 169 columns and 9835 rows, that respectively represent the different items and the different transactions for each customer.
-The dataset represents different transactions (baskets), so the recommendation algorithm that comes to mind here is Association Rules.
-
-With the help of some plots, we explore the groceries dataset.
-First of all, we plot the distribution of the amount of items in every transaction. As we can see on the plot, most of the transactions contain exactly 1 item (2159 transactions). The number of transactions with x items decreases as x increases. On average, every transaction contains 4.409 unique items.
 
 ```{r exploratory}
 groceries_summary <- summary(Groceries)
@@ -78,8 +69,29 @@ itemFrequencyPlot(Groceries, topN = 20)
 
 ```
 
+The Groceries dataset consists of 169 columns and 9835 rows, that respectively represent the different items and the different transactions for each customer.
+The dataset represents different transactions (baskets), so the recommendation algorithm that comes to mind here is Association Rules.
+
+With the help of some plots, we explore the groceries dataset.
+First of all, we plot the distribution of the amount of items in every transaction. As we can see on the plot, most of the transactions contain exactly 1 item (2159 transactions). The number of transactions with x items decreases as x increases. On average, every transaction contains 4.409 unique items.
+
+A random sample of 100 transactions for the groceries dataset confirms the sparsity of the dataset: only a few items are bought in every transaction and every item only occurs in a few transactions.
+
+```{r Sparsity}
+
+image(sample(Groceries, 100))
+
+```
 
 ## 2.3 Data Preperation
+
+Because the groceries dataset is actually a binary matrix. The matrix doesn't contain any real ratings, so normailzation is not possible in this case. We just convert the transactions 'Groceries' to a binaryRatingMatrix 'groceriesDataset'. With this binaryRatingMatrix we can build our recommenders.
+
+```{r Convert ot Binary matrix}
+
+groceriesDataset <- as(Groceries, "binaryRatingMatrix")
+
+```
 
 ## 2.4 Model Selection
 
@@ -149,6 +161,7 @@ resultsIBCF <- evaluate(esSplitGroc, models_to_evaluate, type = "topNList", n=c(
 plot(resultsIBCF, annotate=c(1,2))
 
 ```
+
 For IBCF, we see that the Jaccard method works best, especially when less recommendations are made. The best parameter for k seems to be 150 in this case, although, again, the performance of the algorithms are very close for the different parameters.
 
 Now we compare all these algorithms, with their optimal parameters, with each other. For AR choose our parameters in such a way that enough rules are generated to make enough recommendations so we can evaluate AR with the other algorithms.
