@@ -1,0 +1,2 @@
+"0","# 80-20 for train and test set"
+"0","esSplitGroc <- evaluationScheme(groceriesDataset, method=""split"", train=0.80, given = -1)"

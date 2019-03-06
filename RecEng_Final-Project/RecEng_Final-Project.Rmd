@@ -32,21 +32,23 @@ library(shiny)
 
 This markdown contains the development of two recommendation engines, where one provides recommendations for groceries based on past transactions and the other provides recommendations for movies, based on user ratings. The final models were selected following the CRISP-DM framework for each business case: Business Understanding -> Data Understanding -> Data Preperation -> Modelling -> Model Evaluation, where special attention was given to the nature of each business problem for the model selection, prior to any performance evaluations. 
 
-According to this approach, the following two models were selected, with their corresponding results:
+Given the seperate nature, aim and construction of each recommendation engine, the model development section of this markdown is split into two parts, where section 2 contains the development for the groceries recommendation engine and section 3 contains the development for the movies recommendation engine.
+
+Results and performance evaluations of the final prototypes are stated here below. A detailed methodology of how these models were selected can be found in sections (2.4) for grocery recommendations and (3.4) for movie recommendations.
+
 
 ### Final Model - Recommendation Engine For Groceries
 
-To provide recommendations for groceries based on past transactions an association analysis was performed to identify rules that define whether the purchase of one or more groceries would increase the probability of a purchase of another grocery item. To see the methodology of how this model was selected, see Section 2.4, model selection. 
+To provide recommendations for groceries based on past transactions an association analysis was performed to identify rules that define whether the purchase of one or more groceries would increase the probability of a purchase of another grocery item. To see the methodology of how this model was selected, see Section 2.4, "Model selection". 
 
-Amongst the many rules discovered, BLANK distinct rules have been identified in terms of statistical validity and value for business. 
-
-Insights into purchasing patterns gained from these rules are intended to guide the business manager to increase grocery sales, by discovering item groups that customers tend to buy together.The analysis herein utilized sales information contained in the dataset “Groceries”. 
 By utilizing the associative metrics Lift, Confidence difference and Confidence ratio, the following set of BLANK rules was identified:
 
+----RULES-----
+
+Insights into purchasing patterns gained from these rules are intended to guide the business manager to increase grocery sales, by discovering item groups that customers tend to buy together. The analysis herein utilized sales information contained in the dataset “Groceries”. 
 
 ### Model Results - Recommendation Engine For Movies
 
-Given the seperate nature, aim and construction of each recommendation engine, the model development section of this markdown is split into two parts, where section 2.1 contains the development for the groceries recommendation engine and section 2.2 contains the development for the movies recommendation engine. 
 
 # 2. Model Development: Recommendation Engine For Groceries
 

@@ -1,0 +1,30 @@
+"1","
+"
+"1","$POPULAR_binaryRatingMatrix
+"
+"1","Recommender method: POPULAR for binaryRatingMatrix
+Description: Recommender based on item popularity.
+Reference: NA
+"
+"1","Parameters: None
+"
+"1","
+"
+"1","$RANDOM_binaryRatingMatrix
+"
+"1","Recommender method: RANDOM for binaryRatingMatrix
+Description: Produce random recommendations (binary ratings).
+Reference: NA
+"
+"1","Parameters: None
+"
+"1","
+"
+"1","$UBCF_binaryRatingMatrix
+"
+"1","Recommender method: UBCF for binaryRatingMatrix
+Description: Recommender based on user-based collaborative filtering.
+Reference: NA
+"
+"1","Parameters:
+"
