@@ -323,7 +323,10 @@ We will test recommendation systems with the following algoriths:
 
 * *IBCF Pearson* --> The item-based CF recommends items based on their similarity with the items that the target user rated. The advantage of this algorithm family is that it tackles the issue that users' prefrences may change over time. For this exercise we test the Pearson similarity measure. We can also use the Cosine or Jaccard similarity measures. However, the Pearson correlation is invariant to adding a constant to all elements.
 
-* *Alternating Least Squares Matrix Factorization (ALS)* --> In collaborative filtering, the scalability issue is common with large datasets. If we add more users and movies, the matrix grows exponentially, and the majority of movies receive few or even no ratings ending with a really sparse matrix. The ALS algorithm is a matrix factorization solution for collaborative filtering, when we need to scale the recommendation system. We will test the ALS algorithms assuming that we would require scalability in the future.
+* *Alternating Least Squares Matrix Factorization (ALS)* 
+* *Singular Value Decomposition (SVD)*
+
+In collaborative filtering, the scalability issue is common with large datasets. If we add more users and movies, the matrix grows exponentially, and the majority of movies receive few or even no ratings ending with a really sparse matrix. The ALS and SVD algorithms are matrix factorization solutions for collaborative filtering, when we need to scale the recommendation system. We will test the ALS and SVD algorithms assuming that we would require scalability in the future.
 
 
 ```{r}
@@ -342,7 +345,8 @@ algorithms <- list(
   "User Based CFnn50" = list(name="UBCF", param=list(nn=50)),
   "User Based CFCos" = list(name="UBCF", param=list(method = "Cosine")),  
   "Item Based CFPea" = list(name="IBCF", param=list(method = "Pearson")),
-  "ALS" = list(name="ALS", param=list())
+  "ALS" = list(name="ALS", param=list(k=50)),
+  "SVD" = list(name="SVD", param=list(k=50))
 )
 
 Multi_results <- evaluate(Multi_evaluate, 
