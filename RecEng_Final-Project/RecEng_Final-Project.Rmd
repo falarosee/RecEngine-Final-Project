@@ -253,17 +253,63 @@ rowMeans(bigMovieLense[1,])
 
 # Distribution of the ratings
 hist(getRatings(bigMovieLense), col = "darkred")
-hist(getRatings(normalize(bigMovieLense, method = "Z-score")), main="Z-score Ratings Distribution", col = "DarkRed")
+hist(getRatings(normalize(bigMovieLense, method = "Z-score")), main="Z-score Ratings Distribution", col = "Red")
 
 #distribution of how many movies each user has rated
-hist(rowCounts(bigMovieLense), breaks = 50, main = "Histogram Rated movies by user", col = "DarkBlue")
+hist(rowCounts(bigMovieLense), breaks = 50, main = "Histogram Rated movies by user", col = "lightBlue")
 
 # Distribution of the average ratings per movie
-hist(colMeans(bigMovieLense), main = "Histogram Average Rating per Movie", col = "DarkGreen")
+hist(colMeans(bigMovieLense), main = "Histogram Average Rating per Movie", col = "lightGreen")
+```
+
+In the following Rating Matrix Heat map we subset the first 50 users and 100 movies. We can see that the matrix is highly sparsed and some users tend to evaluate in a more aggressive/non-aggressive way. This supports the fact that the information has to be normalized for a correct analysis. 
+
+```{r}
+
+image(getRatingMatrix(bigMovieLense[1:50,1:100]), main="Rating Matrix Heatmap", xlab = "Movies", ylab="Users")
+
+image(getRatingMatrix(normalize(bigMovieLense, method="Z-score")[1:50,1:100]), main=" Normalized Rating Matrix Heatmap", xlab = "Movies", ylab="Users")
+
+```
+
+Now we will analyze which are the most viewed movies (based in the number of ratings) and the top average rated. We can see there is not a commonality of the most view with the top rated.
+
+```{r}
+
+views_per_movie <- colCounts(bigMovieLense)
+table_view <- data.frame(movie = names(views_per_movie), views = views_per_movie)
+table_view <- table_view[order(table_view$views, decreasing = T),]
+
+avg_rating_pre_movie <- colMeans(bigMovieLense)
+top_rated <- data.frame(movie = names(avg_rating_pre_movie), rating = avg_rating_pre_movie)
+top_rated <- top_rated[order(top_rated$rating, decreasing = T),]
+
+avg_movies <- merge(table_view, top_rated, by = "movie")
+top_views <- avg_movies[order(avg_movies$views, decreasing = T),]
+top_rated <- avg_movies[order(avg_movies$rating, decreasing =T),]
+
+# Top viewed movies
+print(as(top_views[1:10,],"matrix"))
+
+# Top rated movies
+print(as(top_rated[1:10,],"matrix"))
+
+plot(avg_movies$rating, avg_movies$views, main = "Ratings vs Views", xlab="Movie Average Rating", ylab = "Total Views", col="lightblue")
 
 ```
 
 # Comparing Recommendation Algorithms
+
+### Evaluation Scheme
+
+We create an evaluation scheme with 80% training set and 20% testing. 
+For the test, 5 items will be given to the recommender algorithm and the others will be held out for computing the error. In this case having a small "given" parameter makes sense because the movie consumption is not as frequent as for example songs. We would only need five movie ratings by the user to start recomending. 
+
+Considering that the ratings are distributed from 1 to 5, we assume a good rating of 4 and 5. This binarization metric is important for understandig the popularity of an item. 
+
+We may perform a K-fold cross evaluation to better compute the algorithm performance indicators. However, to optimize the running time, a single split is taken into account.
+
+### Algorithms
 
 We will test recommendation systems with the following algoriths:
 
@@ -273,18 +319,19 @@ We will test recommendation systems with the following algoriths:
 * *UBCF* --> The user-based CF assumes that similar users tend to give similar rates. There are different similarity measures between users. For this exercise we will test the Nearest Neighbors (nn=50) and the Cosine similarity measure.
 
 ** User Based Collaborative Filtering (UBCF) NN = 50 --> The recommendations are given based in the 50 nearest neighbors.
-** User Based Collaborative Filtering (UBCF) Cosine --> The recommendations are given based in the cosine similarity measure.
+** User Based Collaborative Filtering (UBCF) Cosine --> The recommendations are given based in the cosine similarity measure. 
 
 * *IBCF Pearson* --> The item-based CF recommends items based on their similarity with the items that the target user rated. The advantage of this algorithm family is that it tackles the issue that users' prefrences may change over time. For this exercise we test the Pearson similarity measure. We can also use the Cosine or Jaccard similarity measures. However, the Pearson correlation is invariant to adding a constant to all elements.
 
 * *Alternating Least Squares Matrix Factorization (ALS)* --> In collaborative filtering, the scalability issue is common with large datasets. If we add more users and movies, the matrix grows exponentially, and the majority of movies receive few or even no ratings ending with a really sparse matrix. The ALS algorithm is a matrix factorization solution for collaborative filtering, when we need to scale the recommendation system. We will test the ALS algorithms assuming that we would require scalability in the future.
+
 
 ```{r}
 
 # Get the different Algorithms that we may apply to our Recommendation Engine
 recommenderRegistry$get_entries(dataType = "realRatingMatrix")
 
-MoviesSubset <- bigMovieLense[1:(nrow(bigMovieLense)*0.50),]
+MoviesSubset <- bigMovieLense[1:(nrow(bigMovieLense)*0.4),]
 
 set.seed(123)
 Multi_evaluate <- evaluationScheme(MoviesSubset, method = "split", train=0.8, given = 5, goodRating = 4)
@@ -312,28 +359,88 @@ plot(ratings_results)
 
 ```
 
-In the previous plots we can see the best results come from the POPULARITY algorithm.
+In the previous plots we can see the best results come from the *POPULARITY* algorithm.
 
 In the ROC curve, we find a steep increase in True Positive Rates until the tenth recommendation. We would not recommend more than 10 movies considering a possible bigger marginal increment in False Positive Rates.
 
-It is important to consider that the POPULARITY algorithm is based in the most popular items. From a business perspective, this may affect negatively the recommendations incurring in the banana problem (Only recommends top rating items). Considering this, we would create a Hybrid Recommendation Engine that includes Popularity and User Based Recommendations with a small number of nearest neighbors.
+It is important to consider that the POPULARITY algorithm is based in the most popular items. From a business perspective, this may affect negatively the recommendations incurring in the banana problem (Only recommends top rating items). Considering this, we would create a Hybrid Recommendation Engine that includes *Popularity* and *User Based* Recommendations with a small number of nearest neighbors.
+
+## Exploring the UBCF Parameters
+
+If we increase the number of Nearest Neighbors in the UBCF algorithm, we see that the AUC improves, with a tendency towards the Popularity algorithm. This happens because we are considering a larger number of neighbors tending towards the usage of the complete users in the dataset. From a business perspective we would like to have a balance in the recommendations of popular items with personalized items, considering only what the most similar reduced set of neighbors prefer. This may drop the accuracy level of the algorithm but consider more recommendations that will impact positively the business.
+
+```{r}
+
+
+algorithms2 <- list(
+  "random" = list(name="RANDOM", param=NULL),
+  "popular" = list(name="POPULAR", param=NULL),
+  "User Based CFnn10" = list(name="UBCF", param=list(nn=10)),
+  "User Based CFnn50" = list(name="UBCF", param=list(nn=50)),
+  "User Based CFnn100" = list(name="UBCF", param=list(nn=100)),
+  "User Based CFnn200" = list(name="UBCF", param=list(nn=200))
+)
+
+Multi_results <- evaluate(Multi_evaluate, 
+                          method = algorithms2, 
+                          type = "topNList", 
+                          parameter = list(normalize = "Z-Score"),
+                          n=c(1, 5, seq(10,100,10)))
+
+plot(Multi_results, annotate=c(1,2), legend = "topleft")
+
+```
 
 # Creating a Recomendation Engine
 
-
-
-
+Our hybrid recommendation engine proposal is more weighted towards the User Based Collaborative Filtering (70%) than towards the popularity (30%). We want to give more importance to recommend a broader set of movies suited to user preferences. 
 
 ```{r}
-df<-Groceries@data
+MoviesTrainDS <- bigMovieLense[1:(nrow(bigMovieLense)*0.8),]
+MovieTestDS <- bigMovieLense[4833:nrow(bigMovieLense),]
+
+#Recommender of type POPULAR 
+Popular_recMovies <- Recommender(MoviesTrainDS, method="POPULAR")
+# Recommender UBCF
+UBCF_recMovies <- Recommender(MoviesTrainDS, method = "UBCF", parameter = list(nn=10))
+# Hybrid Recommender
+hybrid_rec <- HybridRecommender(Popular_recMovies, UBCF_recMovies, weights = c(0.3,0.7))
 ```
 
+### Recommending Movies
 
+Now that we created a Hybrid recommender merging Popular and User Based CF, we will compare the results of the 10 recommended movies: 
 
+* The first list displays the Hybrid Recommender 30% Popularity and 70% UBCF.
+* The second list displays a 100% Popularity-based recommender.
+* The third list displays a 100% UBCF with 10 nearest neighbors.
 
-You can also embed plots, for example:
+```{r}
+# Top-10 recommendation list for the first user of the test set
 
-```{r, echo=FALSE}
+hybrid_predict <- predict(hybrid_rec, newdata = MovieTestDS[1,], n=10)
+as(hybrid_predict, "list")
+
+Popular_predict <- predict(Popular_recMovies, newdata = MovieTestDS[1,], n=10)
+as(Popular_predict, "list")
+
+UBCF_predict <- predict(UBCF_recMovies, newdata = MovieTestDS[1,], n=10)
+as(UBCF_predict, "list")
 
 ```
 
+We can see that inside the 10 recommended movies of our Hybrid Algorithm we find some of the Highest Viewed / Highest Rated movies such as American Beauty but also movies more suited to the user's preferences. This also happens to another randomly selected user:
+
+```{r}
+# Top-10 recommendation list for the first user of the test set
+
+hybrid_predict2 <- predict(hybrid_rec, newdata = MovieTestDS[200,], n=10)
+as(hybrid_predict2, "list")
+
+Popular_predict2 <- predict(Popular_recMovies, newdata = MovieTestDS[200,], n=10)
+as(Popular_predict2, "list")
+
+UBCF_predict2 <- predict(UBCF_recMovies, newdata = MovieTestDS[200,], n=10)
+as(UBCF_predict2, "list")
+
+```
