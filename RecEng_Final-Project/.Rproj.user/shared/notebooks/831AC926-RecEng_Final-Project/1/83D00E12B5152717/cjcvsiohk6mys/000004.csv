@@ -1,1 +1,0 @@
-"0","image(getRatingMatrix(normalize(bigMovieLense, method=""Z-score"")[1:50,1:100]), main="" Normalized Rating Matrix Heatmap"", xlab = ""Movies"", ylab=""Users"")"

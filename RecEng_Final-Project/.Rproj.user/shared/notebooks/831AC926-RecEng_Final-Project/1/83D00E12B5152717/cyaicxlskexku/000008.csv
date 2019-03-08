@@ -1,2 +1,0 @@
-"0","# Distribution of the average ratings per movie"
-"0","hist(colMeans(bigMovieLense), main = ""Histogram Average Rating per Movie"", col = ""lightGreen"")"

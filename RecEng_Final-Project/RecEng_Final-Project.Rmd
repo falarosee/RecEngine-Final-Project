@@ -28,33 +28,118 @@ library(shiny)
 
 # 1. Executive Summary:
 
-## 1.1 Project Aim & Model Results
+## 1.1 Project Aim & Introduction
 
-This markdown contains the development of two recommendation engines, where one provides recommendations for groceries based on past transactions and the other provides recommendations for movies, based on user ratings. The final models were selected following the CRISP-DM framework for each business case: Business Understanding -> Data Understanding -> Data Preperation -> Modelling -> Model Evaluation, where special attention was given to the nature of each business problem for the model selection, prior to any performance evaluations. 
+This markdown contains the prototype and development of two recommendation engines, where one provides recommendations for groceries based on past transactions and the other provides recommendations for movies, based on user ratings. The final models were selected following the CRISP-DM framework for each business case: Business Understanding -> Data Understanding -> Data Preperation -> Modelling -> Model Evaluation, where special attention was given to the nature of each business problem for the model selection, prior to any performance evaluations. 
 
-Given the seperate nature, aim and construction of each recommendation engine, the model development section of this markdown is split into two parts, where section 2 contains the development for the groceries recommendation engine and section 3 contains the development for the movies recommendation engine.
+Given the seperate nature, aim and construction of each recommendation engine, this markdown is split into two parts, where section 2. contains the technical methodology for the development of the groceries recommendation engine and section 3. contains the technical methodology and development for the movies recommendation engine.
 
-Results and performance evaluations of the final prototypes are stated here below. A detailed methodology of how these models were selected can be found in sections (2.4) for grocery recommendations and (3.4) for movie recommendations.
+The prototypes of the final models are stated in the following two sub-sections below. A detailed methodology of how these models were selected can be found in sections (2.4) for grocery recommendations and (3.4) for movie recommendations.
+
+## 1.2 Business Case & Prototype for Grocery Recommendations
+
+The business objective of the recommendation engine for groceries is to increase sales of the online groceries store of the client, a major spanish supermarket chain. An association rule model prototype was constructed to provide recommendations for groceries based on past customer transactions. Recommendations are based on computing rules that capture whether the purchase of one, or a group of grocery itmes purchased within a single transaction, increase the probability of purchasing another grocery item.
+
+Within the deployment phase, the model is to be embedded within the online store and become part of the online shopping experience. Grocery item recommendations are made based on association rules that meet items that were already placed inside the shopping cart by a customer. Recommended items can be displayed via unintrusive pop-ups that appear when a rule is met that passes a threshold that is to be set in accordance with the clients' business managers. 
+
+Deployment of the model will overtime improve recommendations due to an implicit feedback loop, where new rules are created based on customer transactions and existing rules are strengthened by transactions that were affected by them. The latter happens when a customer accepts a recommendation based on a rule and proceeds to check out. This results in a further transaction that is added to the data which corresponds to-, and thereby reinforces the rule.
+
+Thought can be given to implementing an explicit feedback loop, where the customer is given an option to rate a recommendation with a thumbs up or thumbs down. Alternatively, the direct acceptance of a recommendation can be considered as positive explicit feedback. These explicit ratings can be added as a further weight in the ranking of the recommended items.  
+
+The prototype of this model, along with the 20 most powerful rules is displayed below.  Thought was given to decide which association metrics (support, confidence, rule support, lift, confidence difference or confidence ratio) should be the decisive factor in setting the threshold for the deployment. According to best practices outlined by Lallich Et Al. (2005)[^1], lift, confidence difference and confidence ratio were deemed the most appropriate in comparing meaningful transaction driving association rules. Therefore, appropriate thresholds can be set for each metric in accordance with business experience during the deployment phase. For an explanation of the meaning of each metric, see **Appendix A**.
+
+[^1]https://pdfs.semanticscholar.org/1671/eee808d8c8dfdb7a704962ca90b579cb8d1d.pdf 
+
+### Groceries Recommendation Model Prototype
+
+The model prototype, along with the 20 most powerful rules according to lift, confidence difference or confidence ratio can be explored below:
 
 
-### Final Model - Recommendation Engine For Groceries
+```{r Groceries Prototype}
 
-To provide recommendations for groceries based on past transactions an association analysis was performed to identify rules that define whether the purchase of one or more groceries would increase the probability of a purchase of another grocery item. To see the methodology of how this model was selected, see Section 2.4, "Model selection". 
+groceriesRecAr <- Recommender(groceriesDataset, method = "AR", parameter = list(support = 0.001, conf = 0.001, maxlen = 70))
 
-By utilizing the associative metrics Lift, Confidence difference and Confidence ratio, the following set of BLANK rules was identified:
+arGroceriesModel <- getModel(groceriesRecAr)$rule_base
+rulesDF <- as(arGroceriesModel, "data.frame")
+rulesDF$prior_conf <- rulesDF$confidence / rulesDF$lift
+rulesDF$confidence_diff <- abs(rulesDF$confidence - rulesDF$prior_conf)
+rulesDF$confidence_ratio <- 1- (apply(rulesDF[,c(3,7)], 1, min) / apply(rulesDF[,c(3,7)], 1, max) )
 
-----RULES-----
+# Top 20 according to each AR metric
+lift<-head(rulesDF[order(rulesDF$lift, decreasing = T),],20)
+conf_rat<-head(rulesDF[order(rulesDF$confidence_ratio, decreasing = T),],20)
+conf_dif<-head(rulesDF[order(rulesDF$confidence_diff, decreasing = T),],20) # Rules with longer LHS usually have higher confidence_difference
+```
 
-Insights into purchasing patterns gained from these rules are intended to guide the business manager to increase grocery sales, by discovering item groups that customers tend to buy together. The analysis herein utilized sales information contained in the dataset “Groceries”. 
+##### Most Popular Rules according to Lift
+``` {r Lift Rules}
+print(lift$rules)
+```
+##### Most Popular Rules according to Confidence Difference
 
-### Model Results - Recommendation Engine For Movies
+``` {r Lift Rules}
+print(conf_dif$rules)
+```
+
+``` {r Lift Rules}
+print(conf_rat$rules)
+```
+
+For a detailed methodology of the model construction, see section 2.
+
+## 1.3 Business Case and Prototype for Movie Recommendations
+
+The business objective of the recommendation engine for movies is to increase customer streaming time and improve customer experience of a the client, a major spanish movie streaming platoform. A hybrid model prototype, consisting of collaborative filtering, random generator and popularity elements has been developed to provide user-centric recommendations for movie suggestions for the user to stream. Recommendations are generated based on past user ratings.  
+
+Within the deployment phase, the model is to be embedded within the streaming platform and become part of the online streaming experience. Movie recommendations are made based on users with similar tastes (collaborative filtering), overall popularity and an element of randomness. Recommended movies can be displayed via a dedicated section on the user homepage and filtered according to dimensions such as genre and year.  
+
+Deployment of the model can overtime improve recommendations by implicit and explicit feedback loops. Implicit feedback is extracted through the collaborative filtering element of the hybrid model, where recommendations based on collaborative filtering are reinforced by users who follow recommendations by watching recommended movies. To avoid a feedback loop that continously narrows the recommendations scope, by recommending similar movies that get re-enforced by user behaviour and consequently recommend more of the same, an element of randomness is built into the model that occasionally recommends movies to the user that are outside of the user's usual viewing behaviour.
+
+It is recommended to implement an explicit feedback loop, where the customer is given an option to rate a recommended movie with a thumbs up or thumbs down, after having viewed it. This explicit user feedback adds further information that helps to avoid the possibility of positive implicit feedback for movies that the user watched based on a recommendation, but didn't end up liking. The explicit feedback is therefore an important tool to correct a possible compounding of errors, caused by recommended movies the user watched and did not like. 
+
+The prototype of this model, along with its most significant performance metrics is displayed below. Thought was given to setting apporpriat waits for the different elements of the hybrid, as well as setting an appropriate number of nearest neighbours. As users are not expected to watch many movies within a short time frame, the number of nearest neighbours was kept small. This enables the recommendation engine to start recommending without requiring a large number of watched movies for each user. The elements of the hybrid have been weighted according to their importance, where collaborative filtering is considered most important to tailor customized results (0.6), overall popularity is included to capture quick-win, popular movies and randomness (0.1) is kept small in order prevent scope narrowing, without significantly affecting recommendation quality.
+
+### Movies Recommendation Model Prototype
+
+# Creating a Recomendation Engine
+
+Our hybrid recommendation engine proposal is more weighted towards the User Based Collaborative Filtering (70%) than towards the popularity (30%). We want to give more importance to recommend a broader set of movies suited to user preferences. 
+
+```{r}
+MoviesTrainDS <- bigMovieLense[1:(nrow(bigMovieLense)*0.8),]
+MovieTestDS <- bigMovieLense[4833:nrow(bigMovieLense),]
+
+#Recommender of type POPULAR 
+Popular_recMovies <- Recommender(MoviesTrainDS, method="POPULAR")
+# Recommender UBCF
+UBCF_recMovies <- Recommender(MoviesTrainDS, method = "UBCF", parameter = list(nn=10))
+# Random Recommender
+Random_recMovies <- Recommender(MoviesTrainDS, method = 'RANDOM')
+# Hybrid Recommender
+hybrid_rec <- HybridRecommender(Popular_recMovies, UBCF_recMovies, Random_recMovies ,weights = c(0.3,0.6,0.1))
+
+```
+
+### Recommending Movies
+
+Now that we created a Hybrid recommender merging Popular and User Based CF, we will compare the results of the 10 recommended movies: 
 
 
-# 2. Model Development: Recommendation Engine For Groceries
 
-## 2.1 Business Case
+```{r}
+# Top-10 recommendation list for the first user of the test set
 
-## 2.2 Data Exploration
+hybrid_predict <- predict(hybrid_rec, newdata = MovieTestDS[1,], n=10)
+as(hybrid_predict, "list")
+```
+
+# 2. Recommendation Engine For Groceries: Technical Methodology
+
+## 2.1 Data Exploration
+
+The dataset provided for analysis contained grocery purchases pertaining to 9835 transactions and 169 grocery items, where each row represents a transaction and each column represents an item. It was cleaned and ready for analysis upon receipt. The eighteen 169 variables were identified as binaries, as they have values of 0 and 1 to classify whether the item was purchased (1) or was not purchased (0) within the transaction represented by the row. 
+
+Several different associative metrics and thresholds were tested during data analysis. Those identified as most relevant to the objective (Lift, Confidence ratio and Confidence difference) were selected for inclusion into the model for final recommendations. These metrics were identified according to best practices1 and deemed as the most reliable and effective way of measuring the importance of rules generated, in terms of increasing overall course sales. The results from the selected metrics are presented below. For an explanation of the meaning of each metric, see Appendix B.
 
 Load the groceries dataset, and transform it to a binaryRatingMatrix, from the recommenderlab package.
 
@@ -71,13 +156,16 @@ itemFrequencyPlot(Groceries, topN = 20)
 
 ```
 
+
 The Groceries dataset consists of 169 columns and 9835 rows, that respectively represent the different items and the different transactions.
-The dataset represents different transactions (baskets), so the recommendation algorithm that comes to mind here is Association Rules.
+The dataset represents different transactions (baskets). 
+
+#so the recommendation algorithm that comes to mind here is Association Rules.
 
 With the help of some plots, we explore the groceries dataset.
 First of all, we plot the distribution of the amount of items in every transaction. As we can see on the plot, a lot of the transactions contain exactly 1 item (2159 transactions). The number of transactions with x items decreases as x increases. On average, every transaction contains 4.409 unique items.
 
-A random sample of 100 transactions for the groceries dataset confirms the sparsity of the dataset: only a few items are bought in every transaction and every item only occurs in a few transactions.
+A random sample of 100 transactions for the groceries dataset confirms the sparsity of the dataset: only a few items are bought in every transaction and the majority of the items occure in a small part of the transactions. 
 
 ```{r Sparsity}
 
@@ -85,7 +173,7 @@ image(sample(Groceries, 100))
 
 ```
 
-## 2.3 Data Preperation
+## 2.2 Data Preperation
 
 The groceries dataset is actually a binary matrix. This matrix doesn't contain any real ratings, so normalization is not possible in this case. We just convert the transactions 'Groceries' to a binaryRatingMatrix 'groceriesDataset'. With this binaryRatingMatrix we can build our recommenders.
 
@@ -95,11 +183,11 @@ groceriesDataset <- as(Groceries, "binaryRatingMatrix")
 
 ```
 
-## 2.4 Model Selection
+## 2.3 Model Selection
 
 The following output shows all the possible algorithms for a binaryRatingMatrix.
 
-```{r Show all the possible algorithms for a binaryRatingMatrix}
+```{r Show all the possible algorithms for a binaryRatingMatrix, echo=TRUE}
 
 recommenderRegistry$get_entries(dataType = "binaryRatingMatrix")
 
@@ -107,6 +195,8 @@ recommenderRegistry$get_entries(dataType = "binaryRatingMatrix")
 
 There are six possible recommendation algorithms for the groceries dataset, namely: Alternative Least Squares (ALS), Association Rules (AR), Item Based Collaborative Filtering (IBCF), Popular, Random and User Based Collaborative Filtering (UBCF).
 We are going to take a look at the AR, IBCF, UBCF and Popular algorithms, and we are going to use the Random algorithm as a baseline.
+
+#---STATISTICAL EVALUATION---#
 
 First we are going to compare these algorithms according to their ROC curve. We split the data in train and test data. Then we evaluate their performance with a model that was trained on the train set (one model for every algorithm). The model then returns a list with N recommendations for every transaction in the test set. For N, we choose the values 1, 5, 10, 15 and 20 because ultimately it doesn't make sense to recommend more than 20 grocery store items. For the 'given' parameter in the evaluationScheme function we chose -1, that way the algorithms get all but one items from a transaction and they try to predict the one extra item in that transaction. This makes sense because there are not that many items in each transaction, so it's easier to make a prediction for one item, on the basis of the rest of the transaction. From a business perspective this also makes sense because it is usually the case that a recommendation is done, according to the items that are already in your basket (in online shopping). 
 
@@ -116,6 +206,8 @@ First we are going to compare these algorithms according to their ROC curve. We 
 esSplitGroc <- evaluationScheme(groceriesDataset, method="split", train=0.80, given = -1)
 
 ```
+
+#---TUNING UBCF---#
 
 For the parameter tuning of the different algorithms, we only need to look at the UBCF, IBCF and the AR algorithms because the popular and random ones don't need any parameters.
 The UBCF algorithm needs an 'nn' parameter, which specifies the number of nearest neighbours that the algorithm should look at. We will make several UBCF algorithms with the parameter ranging from 100 to 1000, with a step of 100 to see which parameter value yields the best results. 
@@ -137,6 +229,8 @@ plot(resultsIBCF, annotate=c(1,2))
 ```
 
 As we can see on the graph, the algorithm with nn = 400 performs the best, although there is not much difference between the algorithms. 
+
+#---TUNING IBCF---#
 
 For IBCF, we can specify two parameters: the distance method to use and the parameter k, which is comparable to the parameter nn of UBCF and also specifies the neighbourhood for comparison. 
 The parameter k will vary between 100 and 250 in this case, with steps of 50, and we will compare the method 'Jaccard' and 'Cosine'.
@@ -167,6 +261,7 @@ plot(resultsIBCF, annotate=c(1,2))
 
 For IBCF, we see that the Jaccard method works best, especially when less recommendations are made. In this case, it is much harder to detect the beter parameter because they are all really comparabl. We will choose 150 as the best parameter, although, again, the performance of the algorithms are very close for the different parameters.
 
+#---COMPARISON ALL---#
 Now we compare all these algorithms, with their optimal parameters, with each other. For AR we choose our parameters in such a way that enough rules are generated to make enough recommendations so we can evaluate it easily with the other algorithms.
 
 ```{r Make the models}
@@ -188,17 +283,23 @@ plot(resultsGroc, annotate=c(1), legend = "topright")
 
 This plot shows that the UBCF algorithm gives the best results. The rest of the algorithms actually yield similar results. For UBCF and IBCF, it is the case that for a growing parameter nn and k respectively the algorithms get similar to the 'popular' algorithm because it takes more neighbours into account and ultimately it will take every User/Item into account, just like the 'popular' algorithm does.
 The UBCF algorithm yields the best results, however from a business perspective it is not the most interesting algorithm. Mainly because it doesn't really give an insight in how several items are related, it just makes recommendations based on items that are similar. It is of more use to us to know the items that get frequently bought together and have some kind of rules that explain these relationships between items.
-Because the difference between the algorithms isn't that big, we choose to advance with the AR algorithm because it makes the most sense in this business case and it is easier to draw conclusions from these rules.
+Because the difference between the algorithms isn't that big, we choose to advance with the AR algorithm because it makes the most sense in this business case and it is easier to draw conclusions from these rules. ###--ADD MORE REASONS DISCUSSED--##
 
-## 2.5 Model Tuning
+## 2.4 Final Model Tuning
 
 In this section, we are going to tune the parameter for our AR algorithm.
 
-```{r check AR rules}
+Support -> really small, because when higher, items with high frequency are put into every rule (same items all the time - bannana problem)
 
-groceriesRecAr <- Recommender(getData(esSplitGroc,"train"), method = "AR", parameter = list(support = 0.001, conf = 0.2, maxlen = 5))
+conf -> should be high 
 
-arGroceriesModel <- getModel(groceriesRecAr)$rule_base
+higher constraints = less rules
+
+```{r check AR rules plaything}
+
+groceriesRecAr2 <- Recommender(groceriesDataset, method = "AR", parameter = list(support = 0.001, conf = 0.001, maxlen = 50))
+
+arGroceriesModel <- getModel(groceriesRecAr2)$rule_base
 summary(arGroceriesModel)
 rulesDF <- as(arGroceriesModel, "data.frame")
 rulesDF$prior_conf <- rulesDF$confidence / rulesDF$lift
@@ -210,12 +311,11 @@ head(rulesDF[order(rulesDF$lift, decreasing = T),],20)
 head(rulesDF[order(rulesDF$confidence_ratio, decreasing = T),],20)
 head(rulesDF[order(rulesDF$confidence_diff, decreasing = T),],20) # Rules with longer LHS usually have higher confidence_difference
 head(rulesDF[order(rulesDF$confidence, decreasing = T),],20) 
-head(rulesDF[order(rulesDF$support, decreasing = T),],20) 
-
+head(rulesDF[order(rulesDF$support, decreasing = T),],20)
 ```
 
 
-# 3. Model Development: Recommendation Engine For Movies
+# 3. Recommendation Engine For Movies: Technical Methodology
 
 ```{r}
 load("bigMovieLense.RData")
@@ -274,7 +374,7 @@ image(getRatingMatrix(normalize(bigMovieLense, method="Z-score")[1:50,1:100]), m
 
 ```
 
-Now we will analyze which are the most viewed movies (based in the number of ratings) and the top average rated. We can see there is not a commonality of the most view with the top rated.
+Now we will analyze which are the most viewed movies (based in the number of ratings) and the top average rated. We can see there is no clear relation between total views and top rated.
 
 ```{r}
 
@@ -409,8 +509,11 @@ MovieTestDS <- bigMovieLense[4833:nrow(bigMovieLense),]
 Popular_recMovies <- Recommender(MoviesTrainDS, method="POPULAR")
 # Recommender UBCF
 UBCF_recMovies <- Recommender(MoviesTrainDS, method = "UBCF", parameter = list(nn=10))
+# Random Recommender
+Random_recMovies <- Recommender(MoviesTrainDS, method = 'RANDOM')
 # Hybrid Recommender
-hybrid_rec <- HybridRecommender(Popular_recMovies, UBCF_recMovies, weights = c(0.3,0.7))
+hybrid_rec <- HybridRecommender(Popular_recMovies, UBCF_recMovies, Random_recMovies ,weights = c(0.3,0.6,0.1))
+
 ```
 
 ### Recommending Movies
@@ -432,7 +535,6 @@ as(Popular_predict, "list")
 
 UBCF_predict <- predict(UBCF_recMovies, newdata = MovieTestDS[1,], n=10)
 as(UBCF_predict, "list")
-
 ```
 
 We can see that inside the 10 recommended movies of our Hybrid Algorithm we find some of the Highest Viewed / Highest Rated movies such as American Beauty but also movies more suited to the user's preferences. This also happens to another randomly selected user:

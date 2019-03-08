@@ -1,0 +1,1 @@
+"0","image(getRatingMatrix(bigMovieLense[1:50,1:100]), main=""Rating Matrix Heatmap"", xlab = ""Movies"", ylab=""Users"")"

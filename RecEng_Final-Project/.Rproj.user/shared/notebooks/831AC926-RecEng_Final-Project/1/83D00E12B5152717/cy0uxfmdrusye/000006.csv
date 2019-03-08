@@ -1,1 +1,0 @@
-"0","head(rulesDF[order(rulesDF$confidence_ratio, decreasing = T),],20)"

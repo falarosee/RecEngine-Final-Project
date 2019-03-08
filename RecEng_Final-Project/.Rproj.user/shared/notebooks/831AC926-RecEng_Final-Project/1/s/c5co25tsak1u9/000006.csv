@@ -1,0 +1,2 @@
+"0","#distribution of how many movies each user has rated"
+"0","hist(rowCounts(bigMovieLense), breaks = 50, main = ""Histogram Rated movies by user"", col = ""lightBlue"")"

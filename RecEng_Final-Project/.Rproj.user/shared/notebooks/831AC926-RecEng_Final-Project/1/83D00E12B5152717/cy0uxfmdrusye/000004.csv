@@ -1,6 +1,0 @@
-"0","rulesDF <- as(arGroceriesModel, ""data.frame"")"
-"0","rulesDF$prior_conf <- rulesDF$confidence / rulesDF$lift"
-"0","rulesDF$confidence_diff <- abs(rulesDF$confidence - rulesDF$prior_conf)"
-"0","rulesDF$confidence_ratio <- 1- (apply(rulesDF[,c(3,7)], 1, min) / apply(rulesDF[,c(3,7)], 1, max) )"
-"0","# Top 20 according to each AR metric"
-"0","head(rulesDF[order(rulesDF$lift, decreasing = T),],20)"

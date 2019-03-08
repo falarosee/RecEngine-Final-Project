@@ -1,0 +1,1 @@
+"0","head(rulesDF[order(rulesDF$confidence_diff, decreasing = T),],20) # Rules with longer LHS usually have higher confidence_difference"
