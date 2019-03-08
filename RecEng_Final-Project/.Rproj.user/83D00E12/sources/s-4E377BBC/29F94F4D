@@ -1,0 +1,24 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1552045643525.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1135356351",
+    "id" : "29F94F4D",
+    "lastKnownWriteTime" : 1552069659,
+    "last_content_update" : 1552069659885,
+    "path" : "~/Documents/Personal/01_IE/MBD/Term_2/09_Recomendation_Engines/Final_Project/RecEngine-Final-Project/RecEng_Final-Project/RecEng_Final-Project.Rmd",
+    "project_path" : "RecEng_Final-Project.Rmd",
+    "properties" : {
+        "cursorPosition" : "176,3",
+        "ignored_words" : "nn,Jaccard,Shawshank,Dom,za,vesanje,ldum,klaka,Cassidy,Sundance,Kelly's,Braveheart,dataset,recommenderlab,binaryRatingMatrix,recommender,binarization,Recommender,Lallich,interestingness,https,pdfs,semanticscholar,eee,dfdb,cb,pdf,Jiawei,Micheline,Kamber,Vipin,Kumar,Mahesh,Joshi,Datamining,Rakesh,Agrawal,Ramakrishnan,Srikan,www,statisticshowto,datasciencecentral\n",
+        "last_setup_crc32" : "4E377BBCbb338d19",
+        "scrollLine" : "181"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
